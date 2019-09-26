@@ -1,0 +1,44 @@
+[tls.options]
+
+  [tls.options.default]
+    minVersion = "VersionTLS12"
+
+    cipherSuites = [
+        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+        "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+        "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305",
+        "TLS_AES_128_GCM_SHA256",
+        "TLS_AES_256_GCM_SHA384",
+        "TLS_CHACHA20_POLY1305_SHA256"
+    ]
+
+  [tls.options.mintls13]
+    minVersion = "VersionTLS13"
+
+[http.middlewares]
+  [http.middlewares.compress-all.compress]
+
+  [http.middlewares.https-only.redirectScheme]
+    scheme = "https"
+    permanent = true
+
+  [http.middlewares.security-headers.headers]
+    BrowserXssFilter = true
+    ContentTypeNosniff = true
+    ForceSTSHeader = true
+    FrameDeny = true
+    SSLRedirect = true
+    STSIncludeSubdomains = true
+    STSPreload = true
+    STSSeconds = 315360000
+
+  [http.middlewares.strip-prefix.chain]
+    middlewares = [ "strip-prefix-1", "strip-prefix-2"]
+
+  [http.middlewares.strip-prefix-1.redirectregex]
+    regex="^(https?://[^/]+/[a-z0-9_]+)$"
+    replacement="${1}/"
+    permanent = true
+
+  [http.middlewares.strip-prefix-2.stripprefixregex]
+    regex = [ "/[a-z0-9_]+" ]

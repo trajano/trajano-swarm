@@ -34,7 +34,7 @@ services:
         - intranet=true
         - traefik.enable=true
         - traefik.http.routers.portainer.entryPoints=http
-        - traefik.http.routers.portainer.middlewares=default,strip-prefix
+        - traefik.http.routers.portainer.middlewares=default,strip-prefix@file
         - traefik.http.services.portainer.loadbalancer.server.port=9000
 
 networks:

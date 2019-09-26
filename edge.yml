@@ -36,6 +36,9 @@ services:
       - --providers.docker.exposedByDefault=false
       - --providers.docker.swarmMode=true
       - "--providers.docker.constraints=!Label(`intranet`, `true`)"
+      - '--providers.docker.defaultrule=Host(`trajano.net`) && PathPrefix(`/{{ .Name | trimPrefix (index .Labels "com.docker.stack.namespace") | trimPrefix "_" }}`)'
+
+      - --providers.file.filename=/traefik-conf.toml
 
       - --serverstransport.rootcas=/ca.pem
 
@@ -46,13 +49,14 @@ services:
     volumes:
       - letsencrypt:/etc/traefik/acme
       - /d/p/trajano.net/devops-ca-R2.crt:/ca.pem
+      - /d/p/trajano.net/traefik.toml:/traefik-conf.toml
     networks:
       - traefik
       - internal
       - default
       - management
     deploy:
-      mode: global
+      replicas: 1
       resources:
         limits:
           memory: 64M
@@ -92,13 +96,9 @@ services:
 
         - traefik.http.routers.insecure.rule=HostRegexp(`trajano.net`, `{subdomain:[a-z]+}.trajano.net`)
         - traefik.http.routers.insecure.entryPoints=http
-        - traefik.http.routers.insecure.middlewares=https-only
+        - traefik.http.routers.insecure.middlewares=https-only@file
 
-        - traefik.http.middlewares.https-only.redirectscheme.scheme=https
-        - traefik.http.middlewares.https-only.redirectscheme.permanent=true
-
-        - traefik.http.middlewares.default.chain.middlewares=compress-all
-        - traefik.http.middlewares.compress-all.compress=true
+        - traefik.http.middlewares.default.chain.middlewares=https-only@file,security-headers@file,compress-all@file
     networks:
       - traefik
 networks:
