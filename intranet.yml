@@ -106,9 +106,15 @@ services:
         - traefik.http.routers.ping.middlewares=default
         - traefik.http.routers.ping.service=ping
         - traefik.http.services.ping.loadbalancer.server.port=8080
+
         - traefik.http.middlewares.default.chain.middlewares=compress-all
-        - traefik.http.middlewares.strip-prefix.stripprefixregex.regex=/[a-z0-9_]+
         - traefik.http.middlewares.compress-all.compress=true
+
+        - traefik.http.middlewares.strip-prefix.chain.middlewares=strip-prefix-1,strip-prefix-2
+        - traefik.http.middlewares.strip-prefix-1.redirectregex.regex=^(https?://[^/]+/[a-z0-9_]+)$$
+        - traefik.http.middlewares.strip-prefix-1.redirectregex.replacement=$${1}/
+        - traefik.http.middlewares.strip-prefix-1.redirectregex.permanent=true
+        - traefik.http.middlewares.strip-prefix-2.stripprefixregex.regex=/[a-z0-9_]+
     networks:
       - intranet
   whoami:
