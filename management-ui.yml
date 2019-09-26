@@ -1,0 +1,47 @@
+# docker stack deploy -c management-ui.yml --prune management-ui
+version: '3.7'
+services:
+  zipkin_ui:
+    image: alpine/socat
+    command: tcp-listen:9411,fork,reuseaddr tcp:zipkin:9411
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 32M
+      labels:
+        - intranet=true
+        - traefik.enable=true
+        - traefik.http.routers.zipkin.rule=PathPrefix(`/zipkin`)
+        - traefik.http.routers.zipkin.entryPoints=http
+        - traefik.http.routers.zipkin.middlewares=default
+        - traefik.http.routers.zipkin.service=zipkin
+        - traefik.http.services.zipkin.loadbalancer.server.port=9411
+    networks:
+      - intranet
+      - management
+
+  portainer:
+    image: portainer/portainer
+    command: -H tcp://tasks.agent:9001 --tlsskipverify --no-auth
+    volumes:
+      - portainer_data:/data
+    networks:
+      - intranet
+      - management
+    deploy:
+      labels:
+        - intranet=true
+        - traefik.enable=true
+        - traefik.http.routers.portainer.entryPoints=http
+        - traefik.http.routers.portainer.middlewares=default,strip-prefix
+        - traefik.http.services.portainer.loadbalancer.server.port=9000
+
+networks:
+  intranet:
+    external: true
+  management:
+    external: true
+
+volumes:
+  portainer_data:

@@ -1,0 +1,115 @@
+# docker stack deploy -c edge.yml --prune edge
+version: "3.7"
+services:
+  traefik:
+    image: traefik:v2.0.0
+    ports:
+      - target: 80
+        published: 80
+        protocol: tcp
+        mode: host
+      - target: 443
+        published: 443
+        protocol: tcp
+        mode: host
+      - target: 8080
+        published: 44444
+        protocol: tcp
+        mode: host
+    command:
+      - --global.checknewversion=false
+      - --global.sendanonymoususage=false
+
+      - --accesslog
+      - --api
+      - --api.insecure
+      - --ping
+
+      - --certificatesresolvers.default.acme.httpchallenge.entrypoint=http
+      - --certificatesresolvers.default.acme.email=support@trajano.net
+      - --certificatesresolvers.default.acme.storage=/etc/traefik/acme/default.json
+
+      - --entrypoints.http.address=:80
+      - --entrypoints.https.address=:443
+
+      - --providers.docker.endpoint=tcp://daemon:2375
+      - --providers.docker.exposedByDefault=false
+      - --providers.docker.swarmMode=true
+      - "--providers.docker.constraints=!Label(`intranet`, `true`)"
+
+      - --serverstransport.rootcas=/ca.pem
+
+      - --tracing.zipkin.httpEndpoint=http://zipkin:9411/api/v2/spans
+
+    healthcheck:
+      test: traefik healthcheck --ping
+    volumes:
+      - letsencrypt:/etc/traefik/acme
+      - /d/p/trajano.net/devops-ca-R2.crt:/ca.pem
+    networks:
+      - traefik
+      - internal
+      - default
+      - management
+    deploy:
+      mode: global
+      resources:
+        limits:
+          memory: 64M
+        reservations:
+          memory: 16M
+  daemon:
+    image: alpine/socat
+    command: tcp-listen:2375,fork,reuseaddr unix-connect:/var/run/docker.sock
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - internal
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 32M
+  ping:
+    image: alpine/socat
+    command: tcp-listen:8080,fork,reuseaddr tcp:traefik:8080
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 32M
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.ping.rule=Host(`trajano.net`) && Path(`/ping`)
+        - traefik.http.routers.ping.entryPoints=https
+        - traefik.http.routers.ping.middlewares=default
+        - traefik.http.routers.ping.tls.certresolver=default
+        - traefik.http.routers.ping.service=ping
+        - traefik.http.services.ping.loadbalancer.server.port=8080
+
+        - traefik.http.routers.insecure.rule=HostRegexp(`trajano.net`, `{subdomain:[a-z]+}.trajano.net`)
+        - traefik.http.routers.insecure.entryPoints=http
+        - traefik.http.routers.insecure.middlewares=https-only
+
+        - traefik.http.middlewares.https-only.redirectscheme.scheme=https
+        - traefik.http.middlewares.https-only.redirectscheme.permanent=true
+
+        - traefik.http.middlewares.default.chain.middlewares=compress-all
+        - traefik.http.middlewares.compress-all.compress=true
+    networks:
+      - traefik
+networks:
+  internal:
+    internal: true
+    attachable: false
+  traefik:
+    name: traefik
+    internal: true
+    attachable: true
+  management:
+    external: true
+volumes:
+  letsencrypt:
