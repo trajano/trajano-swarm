@@ -2,7 +2,7 @@
 version: "3.7"
 services:
   traefik:
-    image: traefik:v2.0.0
+    image: traefik:v2.0.1
     ports:
       - target: 80
         published: 80
@@ -36,7 +36,7 @@ services:
       - --providers.docker.exposedByDefault=false
       - --providers.docker.swarmMode=true
       - "--providers.docker.constraints=!Label(`intranet`, `true`)"
-      - '--providers.docker.defaultrule=Host(`trajano.net`) && PathPrefix(`/{{ .Name | trimPrefix (index .Labels "com.docker.stack.namespace") | trimPrefix "_" }}`)'
+      - '--providers.docker.defaultrule=Host(`trajano.net`) && PathPrefix(`/{{ .Name | trimPrefix (index .Labels "com.docker.stack.namespace") | trimPrefix "_" | trimPrefix "-" }}`)'
 
       - --providers.file.filename=/traefik-conf.toml
 
@@ -56,10 +56,15 @@ services:
       - default
       - management
     deploy:
-      replicas: 1
+      update_config:
+        order: start-first
+      restart_policy:
+        condition: any
+        delay: 10s
       resources:
         limits:
           memory: 64M
+          cpus: "1.0"
         reservations:
           memory: 16M
   daemon:

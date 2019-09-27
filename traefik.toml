@@ -12,6 +12,8 @@
         "TLS_CHACHA20_POLY1305_SHA256"
     ]
 
+    sniStrict = true
+
   [tls.options.mintls13]
     minVersion = "VersionTLS13"
 

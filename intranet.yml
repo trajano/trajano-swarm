@@ -2,7 +2,7 @@
 version: "3.7"
 services:
   dmz:
-    image: httpd:alpine
+    image: opentracing/nginx-opentracing
     deploy:
       replicas: 1
       update_config:
@@ -28,13 +28,14 @@ services:
       - /d/p/trajano.net/devops-ca-R2.crt:/ca.pem
       - /d/p/trajano.net/intranet_dmz/i.trajano.net.pem:/cert.pem
       - /d/p/trajano.net/intranet_dmz/key.pem:/key.pem
-      - /d/p/trajano.net/intranet_dmz/httpd.conf:/usr/local/apache2/conf/httpd.conf
-
+      - /d/p/trajano.net/intranet_dmz/nginx.conf:/etc/nginx/nginx.conf
+      - /d/p/trajano.net/intranet_dmz/zipkin-config.json:/etc/zipkin-config.json
     networks:
       - traefik
       - intranet
+      - management
   proxy:
-    image: traefik:v2.0.0
+    image: traefik:v2.0.1
     ports:
       - 55555:8080
     command:
@@ -53,7 +54,7 @@ services:
       - --providers.docker.swarmMode=true
       - --providers.docker.network=intranet
       - "--providers.docker.constraints=Label(`intranet`, `true`)"
-      - '--providers.docker.defaultrule=Host(`i.trajano.net`) && PathPrefix(`/{{ .Name | trimPrefix (index .Labels "com.docker.stack.namespace") | trimPrefix "_" }}`)'
+      - '--providers.docker.defaultrule=Host(`i.trajano.net`) && PathPrefix(`/{{ .Name | trimPrefix (index .Labels "com.docker.stack.namespace") | trimPrefix "_" | trimPrefix "-" }}`)'
 
       - --providers.file.filename=/traefik-conf.toml
 
@@ -61,14 +62,17 @@ services:
     healthcheck:
       test: traefik healthcheck --ping
     deploy:
-      replicas: 1
       update_config:
         order: start-first
       restart_policy:
         condition: any
         delay: 10s
-    environment:
-      - TZ=America/Toronto
+      resources:
+        limits:
+          memory: 64M
+          cpus: "1.0"
+        reservations:
+          memory: 16M
     volumes:
       - /d/p/trajano.net/traefik.toml:/traefik-conf.toml
     networks:
