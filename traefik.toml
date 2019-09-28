@@ -14,8 +14,22 @@
 
     sniStrict = true
 
-  [tls.options.mintls13]
-    minVersion = "VersionTLS13"
+  [tls.options.intranet]
+    minVersion = "VersionTLS12"
+
+    cipherSuites = [
+        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+        "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+        "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305",
+        "TLS_AES_128_GCM_SHA256",
+        "TLS_AES_256_GCM_SHA384",
+        "TLS_CHACHA20_POLY1305_SHA256"
+    ]
+
+    sniStrict = true
+    [tls.options.intranet.clientAuth]
+      caFiles = ["/ca.pem"]
+      clientAuthType = "RequireAndVerifyClientCert"
 
 [http.middlewares]
   [http.middlewares.compress-all.compress]

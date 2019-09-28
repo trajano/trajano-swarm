@@ -1,6 +1,6 @@
 # Trajano base Docker swarm stacks
 
-This contains the stack files used to deploy my Docker swarm.  It uses Traefik 2.0.1 to do the TLS routing and SSL termination, Nginx to do the SSL client certificate validation and another Traefik to manage the intranet services.  
+This contains the stack files used to deploy my Docker swarm.  It uses Traefik 2.0.1 to do the TLS routing and SSL termination and client certificate validation and another Traefik to manage the intranet services.  
 
 It uses the label `intranet=true` to distinguish intranet services from external services.
 
@@ -38,4 +38,10 @@ The mappings to the following files should change to match your CA, Intranet DMZ
 
 * Dashboard is exposed to `44444` and `55555` for now until https://github.com/containous/traefik/issues/5374#issuecomment-533540689
 * Zipkin won't be able to trace from nginx because it does not propagate https://github.com/containous/traefik/issues/5511
-* See the `apache` branch for the previous versions which used apache as the DMZ
+
+## DMZs
+
+In the most recent refactoring, having an intermediate DMZ server was removed and now it is Traefik to Traefik communication for the intranet.  However, this approach prevents having complex rules or transformations that would've been possible with either Apache or nginx.
+
+    * See the `apache` branch for the previous versions which used apache as the DMZ.
+    * See the `nginx` branch for the previous versions which used nginx as the DMZ.

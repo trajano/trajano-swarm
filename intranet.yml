@@ -2,39 +2,6 @@
 version: "3.7"
 services:
   dmz:
-    image: opentracing/nginx-opentracing
-    deploy:
-      replicas: 1
-      update_config:
-        order: start-first
-      restart_policy:
-        condition: any
-        delay: 10s
-      labels:
-        - traefik.enable=true
-        - traefik.docker.network=traefik
-
-        - traefik.tcp.routers.intranet.rule=HostSNI(`i.trajano.net`)
-        - traefik.tcp.routers.intranet.entryPoints=https
-        - traefik.tcp.routers.intranet.tls.certresolver=default
-        - traefik.tcp.routers.intranet.tls.passthrough=true
-        - traefik.tcp.routers.intranet.tls.domains[0].main=i.trajano.net
-        - traefik.tcp.routers.intranet.tls.domains[0].sans=i.trajano.net
-        - traefik.tcp.routers.intranet.service=intranet
-
-        - traefik.tcp.services.intranet.loadbalancer.server.port=443
-
-    volumes:
-      - /d/p/trajano.net/devops-ca-R2.crt:/ca.pem
-      - /d/p/trajano.net/intranet_dmz/i.trajano.net.pem:/cert.pem
-      - /d/p/trajano.net/intranet_dmz/key.pem:/key.pem
-      - /d/p/trajano.net/intranet_dmz/nginx.conf:/etc/nginx/nginx.conf
-      - /d/p/trajano.net/intranet_dmz/zipkin-config.json:/etc/zipkin-config.json
-    networks:
-      - traefik
-      - intranet
-      - management
-  proxy:
     image: traefik:v2.0.1
     ports:
       - 55555:8080
@@ -73,10 +40,23 @@ services:
           cpus: "1.0"
         reservations:
           memory: 16M
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=traefik
+
+        - traefik.http.routers.intranet.rule=Host(`i.trajano.net`)
+        - traefik.http.routers.intranet.entryPoints=https
+        - traefik.http.routers.intranet.tls.certresolver=default
+        - traefik.http.routers.intranet.tls.options=intranet@file
+        - traefik.http.routers.intranet.service=intranet
+
+        - traefik.http.services.intranet.loadbalancer.server.port=80
+
     volumes:
       - /d/p/trajano.net/traefik.toml:/traefik-conf.toml
     networks:
       - intranet
+      - traefik
       - internal
       - management
   daemon:

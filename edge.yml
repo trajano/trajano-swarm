@@ -40,8 +40,6 @@ services:
 
       - --providers.file.filename=/traefik-conf.toml
 
-      - --serverstransport.rootcas=/ca.pem
-
       - --tracing.zipkin.httpEndpoint=http://zipkin:9411/api/v2/spans
 
     healthcheck:
@@ -56,6 +54,7 @@ services:
       - default
       - management
     deploy:
+      mode: global
       update_config:
         order: start-first
       restart_policy:
