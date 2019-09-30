@@ -24,8 +24,6 @@ The `default` middleware chain for intranet is `compress-all@file` since it is e
 The mappings to the following files should change to match your CA, Intranet DMZ certificate and Intranet DMZ private key respectively.
 
     - /d/p/trajano.net/devops-ca-R2.crt
-    - /d/p/trajano.net/intranet_dmz/i.trajano.net.pem
-    - /d/p/trajano.net/intranet_dmz/key.pem
 
 ## Deploying
 
