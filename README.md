@@ -43,5 +43,6 @@ The mappings to the following files should change to match your CA, Intranet DMZ
 
 In the most recent refactoring, having an intermediate DMZ server was removed and now it is Traefik to Traefik communication for the intranet.  However, this approach prevents having complex rules or transformations that would've been possible with either Apache or nginx.
 
-    * See the `apache` branch for the previous versions which used apache as the DMZ.
-    * See the `nginx` branch for the previous versions which used nginx as the DMZ.
+## Branches
+* [apache](https://github.com/trajano/trajano-swarm/tree/apache) uses Apache HTTPd as the DMZ.
+* [nginx](https://github.com/trajano/trajano-swarm/tree/nginx) uses nginx as the DMZ.
