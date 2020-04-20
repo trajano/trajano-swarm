@@ -151,11 +151,15 @@ services:
       mode: global
 
   kibana-api:
-    image: docker.elastic.co/kibana/kibana:7.6.2
+    image: docker.elastic.co/kibana/kibana:7.5.2
     environment:
       - "xpack.security.enabled=false"
+      - "SERVER_BASEPATH=/kibana"
+      - "SERVER_REWRITEBASEPATH=true"
+      - "LOGGING_SILENT=true"
     networks:
       - default
+      - management-ui
 networks:
   management:
     name: management

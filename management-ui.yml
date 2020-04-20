@@ -13,8 +13,6 @@ services:
         - intranet=true
         - traefik.enable=true
         - traefik.http.routers.zipkin.rule=PathPrefix(`/zipkin`)
-        - traefik.http.routers.zipkin.entryPoints=http
-        - traefik.http.routers.zipkin.service=zipkin
         - traefik.http.services.zipkin.loadbalancer.server.port=9411
     networks:
       - intranet
@@ -32,28 +30,44 @@ services:
       labels:
         - intranet=true
         - traefik.enable=true
-        - traefik.http.routers.portainer.entryPoints=http
         - traefik.http.routers.portainer.middlewares=strip-prefix@file
         - traefik.http.services.portainer.loadbalancer.server.port=9000
   kibana:
-    image: docker.elastic.co/kibana/kibana:7.6.2
-    environment:
-      - SERVER_BASEPATH=/kibana
-      - SERVER_REWRITEBASEPATH=true
-    ports:
-      - 5601:5601
-    networks:
-      - intranet
-      - management-ui
+    image: alpine/socat
+    command: tcp-listen:5601,fork,reuseaddr tcp:kibana-api:5601
     deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 32M
       labels:
         - intranet=true
         - traefik.enable=true
-        - traefik.http.routers.kibana.entryPoints=http
+        - traefik.http.routers.kibana.rule=PathPrefix(`/kibana`)
+        - traefik.http.routers.kibana.service=kibana
         - traefik.http.services.kibana.loadbalancer.server.port=5601
-    # labels:
-    #   co.elastic.logs/module: kibana
-    #   co.elastic.logs/fileset: log
+    networks:
+      - intranet
+      - management-ui
+
+  # kibana:
+  #   image: docker.elastic.co/kibana/kibana:7.5.2
+  #   environment:
+  #     - SERVER_BASEPATH=/kibana
+  #   ports:
+  #     - 5601:5601
+  #   networks:
+  #     - intranet
+  #     - management-ui
+  #   deploy:
+  #     labels:
+  #       - intranet=true
+  #       - traefik.enable=true
+  #       - traefik.http.routers.kibana.entryPoints=http
+  #       - traefik.http.services.kibana.loadbalancer.server.port=5601
+  #   # labels:
+  #   #   co.elastic.logs/module: kibana
+  #   #   co.elastic.logs/fileset: log
 
 networks:
   intranet:
