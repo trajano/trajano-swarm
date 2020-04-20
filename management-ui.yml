@@ -19,7 +19,7 @@ services:
         - traefik.http.services.zipkin.loadbalancer.server.port=9411
     networks:
       - intranet
-      - management
+      - management-ui
 
   portainer:
     image: portainer/portainer
@@ -28,7 +28,7 @@ services:
       - portainer_data:/data
     networks:
       - intranet
-      - management
+      - management-ui
     deploy:
       labels:
         - intranet=true
@@ -36,11 +36,31 @@ services:
         - traefik.http.routers.portainer.entryPoints=http
         - traefik.http.routers.portainer.middlewares=default,strip-prefix@file
         - traefik.http.services.portainer.loadbalancer.server.port=9000
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.6.2
+    environment:
+      - SERVER_BASEPATH=/kibana
+      - SERVER_REWRITEBASEPATH=true
+    ports:
+      - 5601:5601
+    networks:
+      - intranet
+      - management-ui
+    deploy:
+      labels:
+        intranet: "true"
+        traefik.enable: "true"
+        traefik.http.routers.kibana.entryPoints: http
+        traefik.http.routers.kibana.middlewares: default
+        traefik.http.services.kibana.loadbalancer.server.port: 5601
+    # labels:
+    #   co.elastic.logs/module: kibana
+    #   co.elastic.logs/fileset: log
 
 networks:
   intranet:
     external: true
-  management:
+  management-ui:
     external: true
 
 volumes:

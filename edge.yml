@@ -2,7 +2,7 @@
 version: "3.7"
 services:
   traefik:
-    image: traefik:v2.0.1
+    image: traefik:v2.2
     ports:
       - target: 80
         published: 80
@@ -25,7 +25,8 @@ services:
       - --api.insecure
       - --ping
 
-      - --certificatesresolvers.default.acme.httpchallenge.entrypoint=http
+      - --certificatesResolvers.default.acme.tlsChallenge=true
+      # - --certificatesresolvers.default.acme.httpchallenge.entrypoint=http
       - --certificatesresolvers.default.acme.email=support@trajano.net
       - --certificatesresolvers.default.acme.storage=/etc/traefik/acme/default.json
 
@@ -53,10 +54,12 @@ services:
       - internal
       - default
       - management
+    labels:
+      co.elastic.logs/module: traefik
+      co.elastic.logs/fileset.stdout: access
+      co.elastic.logs/fileset.stderr: error
     deploy:
       mode: global
-      update_config:
-        order: start-first
       restart_policy:
         condition: any
         delay: 10s
@@ -67,13 +70,17 @@ services:
         reservations:
           memory: 16M
   daemon:
-    image: alpine/socat
-    command: tcp-listen:2375,fork,reuseaddr unix-connect:/var/run/docker.sock
+    image: tecnativa/docker-socket-proxy
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - internal
+    environment:
+      NETWORKS: 1
+      SERVICES: 1
+      TASKS: 1
     deploy:
+      mode: global
       placement:
         constraints:
           - node.role == manager

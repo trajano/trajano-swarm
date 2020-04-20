@@ -1,6 +1,6 @@
 # Trajano base Docker swarm stacks
 
-This contains the stack files used to deploy my Docker swarm.  It uses Traefik 2.0.1 to do the TLS routing and SSL termination and client certificate validation and another Traefik to manage the intranet services.  
+This contains the stack files used to deploy my Docker swarm.  It uses Traefik 2.2 to do the TLS routing and SSL termination and client certificate validation and another Traefik to manage the intranet services.  
 
 It uses the label `intranet=true` to distinguish intranet services from external services.
 
@@ -21,7 +21,7 @@ The `default` middleware chain for intranet is `compress-all@file` since it is e
 
 ## Required files
 
-The mappings to the following files should change to match your CA, Intranet DMZ certificate and Intranet DMZ private key respectively.
+The mappings to the following file should change to match your Intranet CA.
 
     - /d/p/trajano.net/devops-ca-R2.crt
 

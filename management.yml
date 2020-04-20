@@ -2,14 +2,72 @@
 version: "3.7"
 services:
   zipkin:
-    image: openzipkin/zipkin
+    image: openzipkin/zipkin:2.21.1
+    environment:
+      - STORAGE_TYPE=elasticsearch
+      - ES_HOSTS=http://elasticsearch:9200
     networks:
       - management
+      - management-ui
+      - default
     deploy:
       resources:
         limits:
           cpus: '0.5'
           memory: 128M
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.2
+    ports:
+      - 9200:9200
+    environment:
+      - "discovery.type=single-node"
+      - "logger.org.elasticsearch=error"
+      - "xpack.security.enabled=false"
+      - "xpack.monitoring.enabled=false"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - default
+      - management-ui
+    labels:
+      co.elastic.logs/enabled: "true"
+      co.elastic.logs/module: elasticsearch
+      co.elastic.logs/fileset.stdout: server
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.6.2
+    environment:
+      - XPACK_MANAGEMENT_ENABLED=false
+    networks:
+      - management
+      - default
+    command:
+      - -e
+      - |
+        input {
+          beats {
+            port => 5044
+          }
+          gelf { }
+        }
+        output {
+          if [@metadata][beat] {
+            elasticsearch {
+              hosts => [ "//elasticsearch" ]
+              manage_template => false
+              index => "%{[@metadata][beat]}-%{[@metadata][version]}-%{+YYYY.MM.dd}"
+            }
+          } else {
+            elasticsearch {
+              hosts => [ "//elasticsearch" ]
+              index => "logstash-%{+YYYY.MM.dd}"
+            }
+          }
+        }
   agent:
     image: portainer/agent
     environment:
@@ -18,14 +76,95 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/lib/docker/volumes:/var/lib/docker/volumes
     networks:
-      - management
+      - management-ui
     deploy:
       mode: global
       placement:
         constraints: [node.platform.os == linux]
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:7.6.2
+    deploy:
+      mode: global
+    networks:
+      - default
+    command:
+      - -E
+      - |
+        filebeat.autodiscover.providers=[
+          {
+            type: docker,
+            hints.enabled: true
+          }
+        ]
+      - -E
+      - processors={1:{add_docker_metadata:{host:unix:///var/run/docker.sock}}}
+      - -E
+      - output.elasticsearch.enabled=false
+      - -E
+      - output.logstash.enabled=true
+      - -E
+      - output.logstash.hosts=["logstash:5044"]
+      - -E
+      - setup.kibana.host=http://kibana-api
+      - --modules
+      - nginx,mysql,system
+      # - -d
+      # - autodiscover
+      # - -e
+    user: root
+    labels:
+      co.elastic.logs/enabled: "false"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+  metricbeat:
+    image: docker.elastic.co/beats/metricbeat:7.6.2
+    networks:
+      - default
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
+      - /proc:/hostfs/proc:ro
+      - /:/hostfs:ro
+    user: root
+    hostname: "{{.Node.Hostname}}"
+    command:
+      - -E
+      - |
+        metricbeat.modules=[
+          {
+            module:docker,
+            hosts:[unix:///var/run/docker.sock],
+            period:10s,
+            enabled:true
+          }
+        ]
+      - -E
+      - processors={1:{add_docker_metadata:{host:unix:///var/run/docker.sock}}}
+      - -E
+      - output.elasticsearch.enabled=false
+      - -E
+      - output.logstash.enabled=true
+      - -E
+      - output.logstash.hosts=["logstash:5044"]
+    deploy:
+      mode: global
 
+  kibana-api:
+    image: docker.elastic.co/kibana/kibana:7.6.2
+    networks:
+      - default
 networks:
   management:
     name: management
     internal: true
     attachable: true
+  management-ui:
+    name: management-ui
+    internal: true
+    attachable: true
+  default:
+    internal: true
+    attachable: false
+volumes:
+  elasticsearch-data:

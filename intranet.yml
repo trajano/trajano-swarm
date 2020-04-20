@@ -2,7 +2,7 @@
 version: "3.7"
 services:
   dmz:
-    image: traefik:v2.0.1
+    image: traefik:v2.2
     ports:
       - 55555:8080
     command:
@@ -26,8 +26,13 @@ services:
       - --providers.file.filename=/traefik-conf.toml
 
       - --tracing.zipkin.httpEndpoint=http://zipkin:9411/api/v2/spans
+      - --tracing.serviceName=i-traefik
     healthcheck:
       test: traefik healthcheck --ping
+    labels:
+      co.elastic.logs/module: traefik
+      "co.elastic.logs/fileset.stdout": access
+      "co.elastic.logs/fileset.stderr": error
     deploy:
       update_config:
         order: start-first
@@ -49,8 +54,14 @@ services:
         - traefik.http.routers.intranet.tls.certresolver=default
         - traefik.http.routers.intranet.tls.options=intranet@file
         - traefik.http.routers.intranet.service=intranet
-
         - traefik.http.services.intranet.loadbalancer.server.port=80
+
+        # - traefik.http.routers.api.rule=Host(`i.trajano.net`) && ( PathPrefix(`/traefik/api`) || PathPrefix(`/traefik/dashboard`) || PathPrefix(`/traefik/debug`))
+        # - traefik.http.routers.api.entryPoints=https
+        # - traefik.http.routers.api.tls.certresolver=default
+        # - traefik.http.routers.api.tls.options=intranet@file
+        # - traefik.http.routers.api.service=api@internal
+        # - traefik.http.routers.api.middlewares=strip-prefix@file
 
     volumes:
       - /d/p/trajano.net/traefik.toml:/traefik-conf.toml
@@ -60,13 +71,17 @@ services:
       - internal
       - management
   daemon:
-    image: alpine/socat
-    command: tcp-listen:2375,fork,reuseaddr unix-connect:/var/run/docker.sock
+    image: tecnativa/docker-socket-proxy
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - internal
+    environment:
+      NETWORKS: 1
+      SERVICES: 1
+      TASKS: 1
     deploy:
+      mode: global
       placement:
         constraints:
           - node.role == manager
