@@ -15,6 +15,7 @@ services:
       - --ping
 
       - --entrypoints.http.address=:80
+      - --entrypoints.http.http.middlewares=compress-all@file
 
       - --providers.docker.endpoint=tcp://daemon:2375
       - --providers.docker.exposedByDefault=false
@@ -50,8 +51,6 @@ services:
         - traefik.docker.network=traefik
 
         - traefik.http.routers.intranet.rule=Host(`i.trajano.net`)
-        - traefik.http.routers.intranet.entryPoints=https
-        - traefik.http.routers.intranet.tls.certresolver=default
         - traefik.http.routers.intranet.tls.options=intranet@file
         - traefik.http.routers.intranet.service=intranet
         - traefik.http.services.intranet.loadbalancer.server.port=80
@@ -101,12 +100,8 @@ services:
         - intranet=true
         - traefik.enable=true
         - traefik.http.routers.ping.rule=Path(`/ping`)
-        - traefik.http.routers.ping.entryPoints=http
-        - traefik.http.routers.ping.middlewares=default
         - traefik.http.routers.ping.service=ping
         - traefik.http.services.ping.loadbalancer.server.port=8080
-
-        - traefik.http.middlewares.default.chain.middlewares=compress-all@file
     networks:
       - intranet
   whoami:
@@ -119,8 +114,7 @@ services:
       labels:
         - intranet=true
         - traefik.enable=true
-        - traefik.http.routers.whoami.entryPoints=http
-        - traefik.http.routers.whoami.middlewares=default,strip-prefix@file
+        - traefik.http.routers.whoami.middlewares=strip-prefix@file
         - traefik.http.services.whoami.loadbalancer.server.port=80
     networks:
       - intranet

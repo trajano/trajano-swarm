@@ -152,6 +152,8 @@ services:
 
   kibana-api:
     image: docker.elastic.co/kibana/kibana:7.6.2
+    environment:
+      - "xpack.security.enabled=false"
     networks:
       - default
 networks:

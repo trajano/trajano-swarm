@@ -34,6 +34,8 @@ services:
       - --entrypoints.http.http.redirections.entryPoint.scheme=https
       - --entrypoints.http.http.redirections.entrypoint.permanent=true
       - --entrypoints.https.address=:443
+      - --entrypoints.https.http.middlewares=security-headers@file,compress-all@file
+      - --entrypoints.https.http.tls.certresolver=default
 
       - --providers.docker.endpoint=tcp://daemon:2375
       - --providers.docker.exposedByDefault=false
@@ -102,12 +104,9 @@ services:
         - traefik.enable=true
         - traefik.http.routers.ping.rule=Host(`trajano.net`) && Path(`/ping`)
         - traefik.http.routers.ping.entryPoints=https
-        - traefik.http.routers.ping.middlewares=default
         - traefik.http.routers.ping.tls.certresolver=default
         - traefik.http.routers.ping.service=ping
         - traefik.http.services.ping.loadbalancer.server.port=8080
-
-        - traefik.http.middlewares.default.chain.middlewares=security-headers@file,compress-all@file
     networks:
       - traefik
 networks:

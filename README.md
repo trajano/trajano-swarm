@@ -20,16 +20,19 @@ The `default` middleware chain for intranet is `compress-all@file` since it is e
 
 ## Required files
 
-The mappings to the following file should change to match your Intranet CA.
+The mappings to the following file should change to match your Intranet CA and the traefik configuration file respectively.
 
     - /d/p/trajano.net/devops-ca-R2.crt
+    - /d/p/trajano.net/traefik.toml
 
 ## Deploying
 
-    docker stack deploy -c management.yml --prune management
-    docker stack deploy -c edge.yml --prune edge
-    docker stack deploy -c intranet.yml --prune intranet
-    docker stack deploy -c management-ui.yml --prune management-ui
+```
+docker stack deploy -c management.yml --prune management
+docker stack deploy -c edge.yml --prune edge
+docker stack deploy -c intranet.yml --prune intranet
+docker stack deploy -c management-ui.yml --prune management-ui
+```
 
 ## Notes
 
