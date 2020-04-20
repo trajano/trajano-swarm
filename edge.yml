@@ -26,11 +26,13 @@ services:
       - --ping
 
       - --certificatesResolvers.default.acme.tlsChallenge=true
-      # - --certificatesresolvers.default.acme.httpchallenge.entrypoint=http
       - --certificatesresolvers.default.acme.email=support@trajano.net
       - --certificatesresolvers.default.acme.storage=/etc/traefik/acme/default.json
 
       - --entrypoints.http.address=:80
+      - --entrypoints.http.http.redirections.entryPoint.to=https
+      - --entrypoints.http.http.redirections.entryPoint.scheme=https
+      - --entrypoints.http.http.redirections.entrypoint.permanent=true
       - --entrypoints.https.address=:443
 
       - --providers.docker.endpoint=tcp://daemon:2375
@@ -105,11 +107,7 @@ services:
         - traefik.http.routers.ping.service=ping
         - traefik.http.services.ping.loadbalancer.server.port=8080
 
-        - traefik.http.routers.insecure.rule=HostRegexp(`trajano.net`, `{subdomain:[a-z]+}.trajano.net`)
-        - traefik.http.routers.insecure.entryPoints=http
-        - traefik.http.routers.insecure.middlewares=https-only@file
-
-        - traefik.http.middlewares.default.chain.middlewares=https-only@file,security-headers@file,compress-all@file
+        - traefik.http.middlewares.default.chain.middlewares=security-headers@file,compress-all@file
     networks:
       - traefik
 networks:

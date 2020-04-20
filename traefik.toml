@@ -34,10 +34,6 @@
 [http.middlewares]
   [http.middlewares.compress-all.compress]
 
-  [http.middlewares.https-only.redirectScheme]
-    scheme = "https"
-    permanent = true
-
   [http.middlewares.security-headers.headers]
     BrowserXssFilter = true
     ContentTypeNosniff = true

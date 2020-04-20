@@ -11,7 +11,6 @@ Due to Traefik only not allowing TLS options to be set in Docker labels, a TOML 
 ## Common middlewares
 
 * `compress-all` which provides compression.
-* `https-only` which redirects to HTTPS from HTTP.
 * `security-headers` which provides additional headers to [push Trajano.net SSLLabs to A+ rating](https://www.ssllabs.com/ssltest/analyze.html?d=trajano.net)
 * `strip-prefix` which strips the prefix and does a redirect if the first segment does not end with `/` which is useful for reverse proxies that have a single DNS with top level path per application.
 
@@ -35,7 +34,6 @@ The mappings to the following file should change to match your Intranet CA.
 ## Notes
 
 * Dashboard is exposed to `44444` and `55555` for now until https://github.com/containous/traefik/issues/5374#issuecomment-533540689
-* Zipkin won't be able to trace from nginx because it does not propagate https://github.com/containous/traefik/issues/5511
 
 ## DMZs
 
