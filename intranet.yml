@@ -10,6 +10,8 @@ services:
       - --global.sendanonymoususage=false
 
       - --accesslog
+      # - --accesslog.fields.defaultmode=keep
+      - --accesslog.fields.headers.defaultmode=keep
       - --api
       - --api.insecure
       - --ping
@@ -32,8 +34,8 @@ services:
       test: traefik healthcheck --ping
     labels:
       co.elastic.logs/module: traefik
-      "co.elastic.logs/fileset.stdout": access
-      "co.elastic.logs/fileset.stderr": error
+      co.elastic.logs/fileset.stdout: access
+      co.elastic.logs/fileset.stderr: error
     deploy:
       update_config:
         order: start-first
@@ -79,6 +81,8 @@ services:
       NETWORKS: 1
       SERVICES: 1
       TASKS: 1
+    labels:
+      - co.elastic.logs/enabled=false
     deploy:
       mode: global
       placement:

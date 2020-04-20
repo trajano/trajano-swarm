@@ -27,9 +27,6 @@ services:
       - "xpack.monitoring.enabled=false"
     volumes:
       - elasticsearch-data:/usr/share/elasticsearch/data
-    networks:
-      - default
-      - management-ui
     labels:
       co.elastic.logs/enabled: "true"
       co.elastic.logs/module: elasticsearch
@@ -43,8 +40,8 @@ services:
     environment:
       - XPACK_MANAGEMENT_ENABLED=false
     networks:
-      - management
       - default
+      - management
     command:
       - -e
       - |
@@ -55,19 +52,15 @@ services:
           gelf { }
         }
         output {
-          if [@metadata][beat] {
-            elasticsearch {
-              hosts => [ "//elasticsearch" ]
-              manage_template => false
-              index => "%{[@metadata][beat]}-%{[@metadata][version]}-%{+YYYY.MM.dd}"
-            }
-          } else {
-            elasticsearch {
-              hosts => [ "//elasticsearch" ]
-              index => "logstash-%{+YYYY.MM.dd}"
-            }
+          elasticsearch {
+            hosts => [ "//elasticsearch" ]
+            index => "logstash-%{+YYYY.MM.dd}"
           }
         }
+    deploy:
+      labels:
+        co.elastic.logs/module: logstash
+        co.elastic.logs/fileset: log
   agent:
     image: portainer/agent
     environment:
@@ -85,8 +78,6 @@ services:
     image: docker.elastic.co/beats/filebeat:7.6.2
     deploy:
       mode: global
-    networks:
-      - default
     command:
       - -E
       - |
@@ -99,15 +90,13 @@ services:
       - -E
       - processors={1:{add_docker_metadata:{host:unix:///var/run/docker.sock}}}
       - -E
-      - output.elasticsearch.enabled=false
+      - output.elasticsearch.enabled=true
       - -E
-      - output.logstash.enabled=true
+      - output.elasticsearch.hosts=["elasticsearch:9200"]
       - -E
-      - output.logstash.hosts=["logstash:5044"]
-      - -E
-      - setup.kibana.host=http://kibana-api
+      - output.logstash.enabled=false
       - --modules
-      - nginx,mysql,system
+      - nginx,mysql,system,traefik,kibana,logstash
       # - -d
       # - autodiscover
       # - -e
@@ -119,8 +108,6 @@ services:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
   metricbeat:
     image: docker.elastic.co/beats/metricbeat:7.6.2
-    networks:
-      - default
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
@@ -142,24 +129,27 @@ services:
       - -E
       - processors={1:{add_docker_metadata:{host:unix:///var/run/docker.sock}}}
       - -E
-      - output.elasticsearch.enabled=false
+      - output.elasticsearch.enabled=true
       - -E
-      - output.logstash.enabled=true
+      - output.elasticsearch.hosts=["elasticsearch:9200"]
       - -E
-      - output.logstash.hosts=["logstash:5044"]
+      - output.logstash.enabled=false
     deploy:
       mode: global
-
   kibana-api:
     image: docker.elastic.co/kibana/kibana:7.5.2
     environment:
-      - "xpack.security.enabled=false"
-      - "SERVER_BASEPATH=/kibana"
-      - "SERVER_REWRITEBASEPATH=true"
-      - "LOGGING_SILENT=true"
+      - SERVER_BASEPATH=/kibana
+      - SERVER_REWRITEBASEPATH=true
+      - LOGGING_SILENT=true
     networks:
       - default
       - management-ui
+    deploy:
+      labels:
+        co.elastic.logs/module: kibana
+        co.elastic.logs/fileset: log
+
 networks:
   management:
     name: management
@@ -171,6 +161,6 @@ networks:
     attachable: true
   default:
     internal: true
-    attachable: false
+    attachable: true
 volumes:
   elasticsearch-data:

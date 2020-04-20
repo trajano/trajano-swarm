@@ -21,6 +21,8 @@ services:
       - --global.sendanonymoususage=false
 
       - --accesslog
+      # - --accesslog.fields.defaultmode=keep
+      - --accesslog.fields.headers.defaultmode=keep
       - --api
       - --api.insecure
       - --ping
@@ -83,6 +85,8 @@ services:
       NETWORKS: 1
       SERVICES: 1
       TASKS: 1
+    labels:
+      - co.elastic.logs/enabled=false
     deploy:
       mode: global
       placement:
