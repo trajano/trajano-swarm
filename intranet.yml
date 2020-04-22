@@ -106,6 +106,20 @@ services:
         - traefik.http.routers.ping.rule=Path(`/ping`)
         - traefik.http.routers.ping.service=ping
         - traefik.http.services.ping.loadbalancer.server.port=8080
+
+        # - "traefik.http.routers.traefik.rule=(PathPrefix(`/traefik`) || PathPrefix(`/api`))"
+        # - traefik.http.routers.traefik.service=api@internal
+        # - traefik.http.routers.traefik.middlewares=traefik-strip
+        # - traefik.http.middlewares.traefik-strip.stripprefix.prefixes=/traefik
+
+        # - traefik.http.routers.api.rule=Host(`i.trajano.net`) && ( PathPrefix(`/traefik/api`) || PathPrefix(`/traefik/dashboard`) || PathPrefix(`/traefik/debug`))
+        # - traefik.http.routers.api.entryPoints=https
+        # - traefik.http.routers.api.tls.certresolver=default
+        # - traefik.http.routers.api.tls.options=intranet@file
+        # - traefik.http.routers.api.service=api@internal
+        # - traefik.http.routers.api.middlewares=strip-prefix@file
+
+
     networks:
       - intranet
   whoami:

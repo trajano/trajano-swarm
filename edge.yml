@@ -38,6 +38,7 @@ services:
       - --entrypoints.https.address=:443
       - --entrypoints.https.http.middlewares=security-headers@file,compress-all@file
       - --entrypoints.https.http.tls.certresolver=default
+      - --entrypoints.https.http.tls.options=default
 
       - --providers.docker.endpoint=tcp://daemon:2375
       - --providers.docker.exposedByDefault=false
