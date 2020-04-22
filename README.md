@@ -36,7 +36,8 @@ docker stack deploy -c management-ui.yml --prune management-ui
 
 ## Notes
 
-* Dashboard is exposed to `44444` and `55555` for now until https://github.com/containous/traefik/issues/5374#issuecomment-533540689
+* External dashboard is exposed to `44444` for now until https://github.com/containous/traefik/issues/5853 which will allow a second dashboard and API endpoint on the same domain.
+* Intranet dashboard is exposed to "/traefik" based on comment by https://github.com/containous/traefik/issues/5853#issuecomment-575290336.
 * `setup-elk.sh` configures the ELK stack after it has been deployed.
 
 ## DMZs
