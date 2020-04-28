@@ -35,32 +35,6 @@ services:
       resources:
         limits:
           memory: 1G
-  logstash:
-    image: docker.elastic.co/logstash/logstash:7.6.2
-    environment:
-      - XPACK_MANAGEMENT_ENABLED=false
-    networks:
-      - default
-      - management
-    command:
-      - -e
-      - |
-        input {
-          beats {
-            port => 5044
-          }
-          gelf { }
-        }
-        output {
-          elasticsearch {
-            hosts => [ "//elasticsearch" ]
-            index => "logstash-%{+YYYY.MM.dd}"
-          }
-        }
-    deploy:
-      labels:
-        co.elastic.logs/module: logstash
-        co.elastic.logs/fileset: log
   agent:
     image: portainer/agent
     environment:

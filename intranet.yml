@@ -8,13 +8,13 @@ services:
       - --global.sendanonymoususage=false
 
       - --accesslog
-      # - --accesslog.fields.defaultmode=keep
       - --accesslog.fields.headers.defaultmode=keep
       - --api
       - --ping
 
       - --entrypoints.http.address=:80
       - --entrypoints.http.http.middlewares=compress-all@file
+      - --entryPoints.http.forwardedHeaders.insecure
 
       - --providers.docker.endpoint=tcp://daemon:2375
       - --providers.docker.exposedByDefault=false
@@ -50,17 +50,11 @@ services:
         - traefik.docker.network=traefik
 
         - traefik.http.routers.intranet.rule=Host(`i.trajano.net`)
+        - traefik.http.routers.intranet.entrypoints=https
         - traefik.http.routers.intranet.tls.options=intranet@file
+        - traefik.http.routers.intranet.tls.certresolver=default
         - traefik.http.routers.intranet.service=intranet
         - traefik.http.services.intranet.loadbalancer.server.port=80
-
-        # - traefik.http.routers.api.rule=Host(`i.trajano.net`) && ( PathPrefix(`/traefik/api`) || PathPrefix(`/traefik/dashboard`) || PathPrefix(`/traefik/debug`))
-        # - traefik.http.routers.api.entryPoints=https
-        # - traefik.http.routers.api.tls.certresolver=default
-        # - traefik.http.routers.api.tls.options=intranet@file
-        # - traefik.http.routers.api.service=api@internal
-        # - traefik.http.routers.api.middlewares=strip-prefix@file
-
     volumes:
       - /d/p/trajano.net/traefik.toml:/traefik-conf.toml
     networks:
@@ -108,15 +102,6 @@ services:
         - traefik.http.routers.traefik.service=api@internal
         - traefik.http.routers.traefik.middlewares=traefik-strip
         - traefik.http.middlewares.traefik-strip.stripprefix.prefixes=/traefik
-
-        # - traefik.http.routers.api.rule=Host(`i.trajano.net`) && ( PathPrefix(`/traefik/api`) || PathPrefix(`/traefik/dashboard`) || PathPrefix(`/traefik/debug`))
-        # - traefik.http.routers.api.entryPoints=https
-        # - traefik.http.routers.api.tls.certresolver=default
-        # - traefik.http.routers.api.tls.options=intranet@file
-        # - traefik.http.routers.api.service=api@internal
-        # - traefik.http.routers.api.middlewares=strip-prefix@file
-
-
     networks:
       - intranet
   whoami:
@@ -133,6 +118,44 @@ services:
         - traefik.http.services.whoami.loadbalancer.server.port=80
     networks:
       - intranet
+  # db:
+  #   image: mysql:8
+  #   environment:
+  #     MYSQL_DATABASE: admin
+  #     MYSQL_USER: admin
+  #     MYSQL_PASSWORD: admin
+  #     MYSQL_ROOT_PASSWORD: admin
+  #     MYSQL_ROOT_HOST: db.trajano.net
+  #   networks:
+  #     - traefik
+  #   deploy:
+  #     labels:
+  #       - traefik.enable=true
+  #       - traefik.docker.network=traefik
+  #       - traefik.tcp.routers.db.rule=HostSNI(`db.trajano.net`)
+  #       - traefik.tcp.routers.db.entrypoints=https
+  #       - traefik.tcp.routers.db.tls.options=intranet@file
+  #       - traefik.tcp.routers.db.tls.certresolver=default
+  #       - traefik.tcp.routers.db.tls.passthrough=false
+  #       - traefik.tcp.routers.db.service=db
+  #       - traefik.tcp.services.db.loadbalancer.server.port=3306
+  # db:
+  #   image: postgres
+  #   environment:
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: password1
+  #   networks:
+  #     - traefik
+  #   deploy:
+  #     labels:
+  #       - traefik.enable=true
+  #       - traefik.docker.network=traefik
+  #       - traefik.tcp.routers.db.rule=HostSNI(`db.trajano.net`)
+  #       - traefik.tcp.routers.db.entrypoints=https
+  #       - traefik.tcp.routers.db.tls.options=intranet@file
+  #       - traefik.tcp.routers.db.tls.certresolver=default
+  #       - traefik.tcp.routers.db.service=db
+  #       - traefik.tcp.services.db.loadbalancer.server.port=5432
 networks:
   traefik:
     external: true

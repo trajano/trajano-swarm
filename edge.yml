@@ -7,21 +7,20 @@ services:
       - target: 80
         published: 80
         protocol: tcp
-        mode: host
+        # mode: host
       - target: 443
         published: 443
         protocol: tcp
-        mode: host
+        # mode: host
       - target: 8080
         published: 44444
         protocol: tcp
-        mode: host
+        # mode: host
     command:
       - --global.checknewversion=false
       - --global.sendanonymoususage=false
 
       - --accesslog
-      # - --accesslog.fields.defaultmode=keep
       - --accesslog.fields.headers.defaultmode=keep
       - --api
       - --api.insecure
@@ -35,6 +34,7 @@ services:
       - --entrypoints.http.http.redirections.entryPoint.to=https
       - --entrypoints.http.http.redirections.entryPoint.scheme=https
       - --entrypoints.http.http.redirections.entrypoint.permanent=true
+
       - --entrypoints.https.address=:443
       - --entrypoints.https.http.middlewares=security-headers@file,compress-all@file
       - --entrypoints.https.http.tls.certresolver=default
@@ -58,7 +58,6 @@ services:
       - /d/p/trajano.net/traefik.toml:/traefik-conf.toml
     networks:
       - traefik
-      - internal
       - default
       - management
     labels:
@@ -66,7 +65,7 @@ services:
       co.elastic.logs/fileset.stdout: access
       co.elastic.logs/fileset.stderr: error
     deploy:
-      mode: global
+      # mode: global
       restart_policy:
         condition: any
         delay: 10s
@@ -80,8 +79,6 @@ services:
     image: tecnativa/docker-socket-proxy
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    networks:
-      - internal
     environment:
       NETWORKS: 1
       SERVICES: 1
@@ -97,25 +94,8 @@ services:
         limits:
           cpus: '0.5'
           memory: 32M
-  ping:
-    image: alpine/socat
-    command: tcp-listen:8080,fork,reuseaddr tcp:traefik:8080
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 32M
-      labels:
-        - traefik.enable=true
-        - traefik.http.routers.ping.rule=Host(`trajano.net`) && Path(`/ping`)
-        - traefik.http.routers.ping.entryPoints=https
-        - traefik.http.routers.ping.tls.certresolver=default
-        - traefik.http.routers.ping.service=ping
-        - traefik.http.services.ping.loadbalancer.server.port=8080
-    networks:
-      - traefik
 networks:
-  internal:
+  default:
     internal: true
     attachable: false
   traefik:
